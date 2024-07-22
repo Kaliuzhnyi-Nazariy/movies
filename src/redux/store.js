@@ -8,11 +8,11 @@ import {
   REHYDRATE,
 } from "redux-persist";
 import { movieReducer } from "./movie/movieReducer";
-// import { userReducer } from "./user/userReducer";
+import { userReducer } from "./user/userReducer";
 
 export const store = configureStore({
   reducer: {
-    // user: userReducer,
+    user: userReducer,
     movie: movieReducer,
   },
   middleware: (getDefaultMiddleware) =>

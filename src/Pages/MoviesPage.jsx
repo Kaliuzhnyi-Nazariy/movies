@@ -2,7 +2,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { getTopFilms } from "../redux/movie/movieOperations";
 import { selectMovies, selectMoviesPage } from "../redux/movie/movieSellectors";
 import { useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 const MoviesPage = () => {
   const dispatch = useDispatch();
@@ -14,13 +14,20 @@ const MoviesPage = () => {
   }, [dispatch, page]);
   const filmsList = useSelector(selectMovies);
   console.log(filmsList);
+
+  const location = useLocation();
+
   return (
     <div>
       <Link to={"/"}>Home</Link>
       {filmsList.map((film) => {
         return (
           <>
-            <Link to={`${film.id}`} style={{ display: "flex" }}>
+            <Link
+              to={`${film.id}`}
+              style={{ display: "flex" }}
+              state={{ from: location }}
+            >
               <img
                 src={`https://image.tmdb.org/t/p/w500${film.poster_path}`}
                 style={{ width: "120px" }}

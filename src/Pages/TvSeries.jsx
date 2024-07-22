@@ -1,20 +1,20 @@
-import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useLocation, useParams } from "react-router-dom";
-import { findById } from "../redux/movie/movieOperations";
 import { selectMovie } from "../redux/movie/movieSellectors";
+import { useEffect } from "react";
+import { findByIdTvSeries } from "../redux/movie/movieOperations";
 
-const Movies = () => {
-  const { movieId } = useParams();
+const TvSeries = () => {
+  const { tvSeries } = useParams();
   const dispatch = useDispatch();
 
   const movie = useSelector(selectMovie);
 
   useEffect(() => {
-    if (movieId) {
-      dispatch(findById({ movieId }));
+    if (tvSeries) {
+      dispatch(findByIdTvSeries({ tvSeries }));
     }
-  }, [dispatch, movieId]);
+  }, [dispatch, tvSeries]);
 
   const location = useLocation();
   const backLink = location.state?.from.pathname ?? "/";
@@ -22,9 +22,15 @@ const Movies = () => {
   return (
     <div>
       <Link to={backLink}>back</Link>
-      <h2>{movie.title}</h2>
+      <div>
+        <img
+          src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+          width={150}
+        />
+        <h2>{movie.name}</h2>
+      </div>
     </div>
   );
 };
 
-export default Movies;
+export default TvSeries;
