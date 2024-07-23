@@ -13,11 +13,12 @@ import {
 import { useEffect, useState } from "react";
 import SwitchExample from "../Components/ToggleSwitcher";
 import {
-  authenticateRequestToken,
+  // authenticateRequestToken,
   createRequestToken,
+  createSession,
   guestMode,
 } from "../redux/user/userOperations";
-import { selectUserToken } from "../redux/user/userSellectors";
+// import { selectUserToken } from "../redux/user/userSellectors";
 
 const Home = () => {
   const dispatch = useDispatch();
@@ -30,7 +31,7 @@ const Home = () => {
   const results = useSelector(selectMovies);
   // const page = useSelector(selectMoviesPage);
 
-  const token = useSelector(selectUserToken);
+  // const token = useSelector(selectUserToken);
 
   useEffect(() => {
     dispatch(guestMode());
@@ -118,6 +119,22 @@ const Home = () => {
     }
   };
 
+  const handleReg = () => {
+    const query = new URLSearchParams(location.search);
+    const requestToken = query.get("request_token");
+    const approved = query.get("approved");
+
+    if (approved === "true" && requestToken) {
+      dispatch(createSession({ requestToken })).then(() => {
+        history.push("/"); // Redirect to home or another page after session creation
+      });
+    } else {
+      dispatch(guestMode());
+      const redirectTo = `${window.location.origin}/movies-app/`; // Adjust the redirect path as needed
+      dispatch(createRequestToken({ redirectTo }));
+    }
+  };
+
   return (
     <div>
       <button type="button" onClick={movieHandle}>
@@ -126,14 +143,7 @@ const Home = () => {
       <button type="button" onClick={tvSeriesHandle}>
         TVSeries
       </button>
-      <button
-        onClick={() => {
-          dispatch(authenticateRequestToken(token));
-        }}
-      >
-        {" "}
-        reg
-      </button>
+      <button onClick={handleReg}>reg</button>
       <p>
         <b>Picked: </b>
         {picked}

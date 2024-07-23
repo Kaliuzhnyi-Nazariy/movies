@@ -13,7 +13,7 @@ const userSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(createRequestToken.fulfilled, (state, action) => {
-        console.log(action.payload);
+        // console.log(action.payload);
         state.token = action.payload;
       })
       .addCase(guestMode.fulfilled, (state, action) => {
