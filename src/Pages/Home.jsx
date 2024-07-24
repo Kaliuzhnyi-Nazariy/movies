@@ -4,7 +4,7 @@ import {
   getTopFilms,
   getTopTVSeries,
 } from "../redux/movie/movieOperations";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   // selectMovieGenres,
   selectMovies,
@@ -13,30 +13,31 @@ import {
 import { useEffect, useState } from "react";
 import SwitchExample from "../Components/ToggleSwitcher";
 import {
+  createAccessToken,
   // authenticateRequestToken,
   createRequestToken,
-  createSession,
-  guestMode,
+  // createSession,
+  fetchAccountDetails,
+  validateApiKey,
 } from "../redux/user/userOperations";
+import { selectUser } from "../redux/user/userSellectors";
 // import { selectUserToken } from "../redux/user/userSellectors";
 
 const Home = () => {
   const dispatch = useDispatch();
-
   const location = useLocation();
 
   const [page, setPage] = useState(1);
   const [picked, setPicked] = useState(null);
 
   const results = useSelector(selectMovies);
-  // const page = useSelector(selectMoviesPage);
 
-  // const token = useSelector(selectUserToken);
+  const user = useSelector(selectUser);
 
   useEffect(() => {
-    dispatch(guestMode());
-    dispatch(createRequestToken());
-  }, []);
+    dispatch(fetchAccountDetails());
+    console.log(user);
+  }, [dispatch, user]);
 
   const setPageInLS = (pageNumber) => localStorage.setItem("page", pageNumber);
 
@@ -45,47 +46,33 @@ const Home = () => {
   }, [dispatch]);
 
   useEffect(() => {
-    // setPicked("movie");
-    if (
-      !localStorage.getItem("picked") &&
-      isNaN(localStorage.getItem("page"))
-    ) {
-      setPage(1);
-      dispatch(getTopFilms(1));
-    }
-    if (
-      !localStorage.getItem("picked") &&
-      !isNaN(localStorage.getItem("page"))
-    ) {
+    const pickedFromLocalStorage = localStorage.getItem("picked");
+    const pageFromLocalStorage = localStorage.getItem("page");
+
+    if (!pickedFromLocalStorage && !pageFromLocalStorage) {
       localStorage.setItem("picked", "movie");
+      localStorage.setItem("page", 1);
       setPage(1);
-      dispatch(getTopFilms(1));
-    }
-    if (isNaN(localStorage.getItem("page"))) {
-      setPage(1);
-    } else {
-      setPage(localStorage.getItem("page"));
+      setPicked("movie");
+    } else if (pageFromLocalStorage) {
+      localStorage.setItem("page", Number(pageFromLocalStorage));
+      setPage(Number(pageFromLocalStorage));
     }
 
-    setPicked(localStorage.getItem("picked"));
+    setPicked(pickedFromLocalStorage || "movie");
   }, []);
-
-  // const genres = useSelector(selectMovieGenres);
-
   useEffect(() => {
     if (picked === "movie") {
       localStorage.setItem("picked", "movie");
       setPage(localStorage.getItem("page"));
-
       dispatch(getTopFilms(Number(page)));
     }
     if (picked === "tv-series") {
       localStorage.setItem("picked", "tv-series");
       setPage(localStorage.getItem("page"));
-
       dispatch(getTopTVSeries(Number(page)));
     }
-  }, [picked, page]);
+  }, [picked, page, dispatch]);
 
   const movieHandle = () => {
     dispatch(getTopFilms(1));
@@ -106,32 +93,52 @@ const Home = () => {
       prevState + 1;
       setPageInLS(Number(prevState) + 1);
     });
-
-    // dispatch(getTopTVSeries(page));
   };
 
   const minusPage = () => {
     if (page > 1) {
-      setPage((prevPage) => {
-        prevPage - 1;
-        setPageInLS(prevPage - 1);
+      setPage((prevState) => {
+        const newPage = prevState - 1;
+        setPageInLS(newPage);
+        return newPage;
       });
     }
   };
 
-  const handleReg = () => {
+  const navigate = useNavigate();
+
+  const handleAuth = async () => {
     const query = new URLSearchParams(location.search);
     const requestToken = query.get("request_token");
     const approved = query.get("approved");
 
-    if (approved === "true" && requestToken) {
-      dispatch(createSession({ requestToken })).then(() => {
-        history.push("/"); // Redirect to home or another page after session creation
-      });
-    } else {
-      dispatch(guestMode());
-      const redirectTo = `${window.location.origin}/movies-app/`; // Adjust the redirect path as needed
-      dispatch(createRequestToken({ redirectTo }));
+    try {
+      if (approved === "true" && requestToken) {
+        // Create access token
+        const accessToken = await dispatch(
+          createAccessToken({ requestToken })
+        ).unwrap();
+
+        // Fetch account details
+        const accountDetails = await dispatch(
+          fetchAccountDetails(accessToken)
+        ).unwrap();
+        console.log("Account Details:", accountDetails);
+
+        // Validate API key
+        await dispatch(validateApiKey()).unwrap();
+
+        // Create request token and redirect
+        const redirectTo = `${window.location.origin}/movies-app`;
+        await dispatch(createRequestToken({ redirectTo })).unwrap();
+
+        // Navigate after successful authentication
+        navigate("/movies-app");
+      } else {
+        console.error("Authorization failed or request token missing");
+      }
+    } catch (error) {
+      console.error("Error during authentication process:", error);
     }
   };
 
@@ -143,7 +150,7 @@ const Home = () => {
       <button type="button" onClick={tvSeriesHandle}>
         TVSeries
       </button>
-      <button onClick={handleReg}>reg</button>
+      <button onClick={handleAuth}>reg</button>
       <p>
         <b>Picked: </b>
         {picked}

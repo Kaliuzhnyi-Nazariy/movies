@@ -34,8 +34,8 @@ export const movieSlice = createSlice({
         state.totalPages = action.payload.total_pages;
       })
       .addCase(getTopTVSeries.fulfilled, (state, action) => {
-        state.page = action.payload.page;
-        state.films = action.payload.results;
+        state.page = action.payload?.page;
+        state.films = action.payload?.results;
         state.totalPages = action.payload.total_pages;
       })
       .addCase(getTopAdultTVSeries.fulfilled, (state, action) => {
